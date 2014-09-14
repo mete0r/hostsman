@@ -80,18 +80,18 @@ def put_hosts(parsed_lines, hosts):
         yield {
             'type': 'HOSTADDR',
             'addr': hostaddr,
-            'names': names,
+            'names': tuple(names),
         }
 
 
 def line_put_host(line, hostname, hostaddr):
     if hostaddr == line['addr']:
         if hostname not in line['names']:
-            line['names'].append(hostname)
+            line['names'] += (hostname, )
         return True
     else:
         if hostname in line['names']:
-            line['names'].remove(hostname)
+            line['names'] = delete_hostname(line['names'], hostname)
         return False
 
 
@@ -102,11 +102,16 @@ def delete_hosts(parsed_lines, hosts):
         if line['type'] == 'HOSTADDR':
             for hostname in hosts:
                 if hostname in line['names']:
-                    line['names'].remove(hostname)
+                    line['names'] = delete_hostname(line['names'], hostname)
             if len(line['names']) == 0:
                 # skip address without any names
                 continue
         yield line
+
+
+def delete_hostname(hostnames, hostname):
+    return tuple(name for name in hostnames
+                 if name.upper() != hostname.upper())
 
 
 def parse(lines):
@@ -132,7 +137,8 @@ def parse_hostaddr_line(line):
     addr, name_trail = ADDR_SEP.split(line, 1)
     names = NAME_SEP.split(name_trail)
     names = (name.strip() for name in names)
-    names = [name for name in names if name]
+    names = (name for name in names if name)
+    names = tuple(names)
     return {
         'addr': addr,
         'names': names

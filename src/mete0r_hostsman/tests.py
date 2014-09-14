@@ -49,7 +49,7 @@ class HostsManTest(TestCase):
             'line_no': 1,
             'type': 'HOSTADDR',
             'addr': '127.0.0.1',
-            'names': ['localhost'],
+            'names': ('localhost', ),
         }, {
             'line': '# managed by mete0r.hostsman\n',
             'line_no': 2,
@@ -59,19 +59,19 @@ class HostsManTest(TestCase):
             'line_no': 3,
             'type': 'HOSTADDR',
             'addr': '127.0.1.1',
-            'names': ['a.example.tld', 'example.tld'],
+            'names': ('a.example.tld', 'example.tld'),
         }, {
             'line': '127.0.1.2\tb.example.tld\n',
             'line_no': 4,
             'type': 'HOSTADDR',
             'addr': '127.0.1.2',
-            'names': ['b.example.tld'],
+            'names': ('b.example.tld', ),
         }, {
             'line': '127.0.1.2\tc.example.tld\n',
             'line_no': 5,
             'type': 'HOSTADDR',
             'addr': '127.0.1.2',
-            'names': ['c.example.tld'],
+            'names': ('c.example.tld', ),
         }], parsed)
 
     def test_render(self):
@@ -155,11 +155,11 @@ class HostsManTest(TestCase):
             'line_no': 1,
             'type': 'HOSTADDR',
             'addr': '127.0.0.1',
-            'names': ['localhost', 'dev.example.tld'],
+            'names': ('localhost', 'dev.example.tld'),
         }, {
             'type': 'HOSTADDR',
             'addr': '127.0.1.1',
-            'names': ['example.tld'],
+            'names': ('example.tld', ),
         }], parsed)
 
     def test_delete_hosts(self):
@@ -180,7 +180,7 @@ class HostsManTest(TestCase):
             'line_no': 1,
             'type': 'HOSTADDR',
             'addr': '127.0.0.1',
-            'names': ['localhost'],
+            'names': ('localhost', ),
         }, {
             'line': '# managed by mete0r.hostsman\n',
             'line_no': 2,
@@ -190,13 +190,13 @@ class HostsManTest(TestCase):
             'line_no': 3,
             'type': 'HOSTADDR',
             'addr': '127.0.1.1',
-            'names': ['a.example.tld'],
+            'names': ('a.example.tld', ),
         }, {
             'line': '127.0.1.2\tc.example.tld\n',
             'line_no': 5,
             'type': 'HOSTADDR',
             'addr': '127.0.1.2',
-            'names': ['c.example.tld'],
+            'names': ('c.example.tld', ),
         }], parsed)
         parsed = delete_hosts(parsed, 'localhost')
         parsed = list(parsed)
@@ -209,13 +209,13 @@ class HostsManTest(TestCase):
             'line_no': 3,
             'type': 'HOSTADDR',
             'addr': '127.0.1.1',
-            'names': ['a.example.tld'],
+            'names': ('a.example.tld', ),
         }, {
             'line': '127.0.1.2\tc.example.tld\n',
             'line_no': 5,
             'type': 'HOSTADDR',
             'addr': '127.0.1.2',
-            'names': ['c.example.tld'],
+            'names': ('c.example.tld', ),
         }], parsed)
 
     def test_hostmanager_init(self):
@@ -231,7 +231,7 @@ class HostsManTest(TestCase):
             'line_no': 1,
             'type': 'HOSTADDR',
             'addr': '127.0.0.1',
-            'names': ['localhost'],
+            'names': ('localhost', ),
         }, {
             'line': '# managed by mete0r.hostsman\n',
             'line_no': 2,
@@ -241,19 +241,19 @@ class HostsManTest(TestCase):
             'line_no': 3,
             'type': 'HOSTADDR',
             'addr': '127.0.1.1',
-            'names': ['a.example.tld', 'example.tld'],
+            'names': ('a.example.tld', 'example.tld', ),
         }, {
             'line': '127.0.1.2\tb.example.tld\n',
             'line_no': 4,
             'type': 'HOSTADDR',
             'addr': '127.0.1.2',
-            'names': ['b.example.tld'],
+            'names': ('b.example.tld', ),
         }, {
             'line': '127.0.1.2\tc.example.tld\n',
             'line_no': 5,
             'type': 'HOSTADDR',
             'addr': '127.0.1.2',
-            'names': ['c.example.tld'],
+            'names': ('c.example.tld', ),
         }), hostsman.parsed)
 
     def test_hostmanager_list(self):
@@ -321,11 +321,11 @@ class HostsManTest(TestCase):
             'line_no': 1,
             'type': 'HOSTADDR',
             'addr': '127.0.0.1',
-            'names': ['localhost', 'dev.example.tld'],
+            'names': ('localhost', 'dev.example.tld'),
         }, {
             'type': 'HOSTADDR',
             'addr': '127.0.1.1',
-            'names': ['example.tld'],
+            'names': ('example.tld', ),
         }), hostsman.parsed)
 
     def test_hostmanager_setitem(self):
@@ -339,11 +339,11 @@ class HostsManTest(TestCase):
             'line_no': 1,
             'type': 'HOSTADDR',
             'addr': '127.0.0.1',
-            'names': ['localhost', 'dev.example.tld'],
+            'names': ('localhost', 'dev.example.tld'),
         }, {
             'type': 'HOSTADDR',
             'addr': '127.0.1.1',
-            'names': ['example.tld'],
+            'names': ('example.tld', ),
         }), hostsman.parsed)
 
     def test_hostmanager_delete(self):
@@ -363,7 +363,7 @@ class HostsManTest(TestCase):
             'line_no': 1,
             'type': 'HOSTADDR',
             'addr': '127.0.0.1',
-            'names': ['localhost'],
+            'names': ('localhost', ),
         }, {
             'line': '# managed by mete0r.hostsman\n',
             'line_no': 2,
@@ -373,13 +373,13 @@ class HostsManTest(TestCase):
             'line_no': 3,
             'type': 'HOSTADDR',
             'addr': '127.0.1.1',
-            'names': ['a.example.tld'],
+            'names': ('a.example.tld', ),
         }, {
             'line': '127.0.1.2\tc.example.tld\n',
             'line_no': 5,
             'type': 'HOSTADDR',
             'addr': '127.0.1.2',
-            'names': ['c.example.tld'],
+            'names': ('c.example.tld', ),
         }), hostsman.parsed)
 
     def test_hostmanager_delitem(self):
@@ -397,7 +397,7 @@ class HostsManTest(TestCase):
             'line_no': 1,
             'type': 'HOSTADDR',
             'addr': '127.0.0.1',
-            'names': ['localhost'],
+            'names': ('localhost', ),
         }, {
             'line': '# managed by mete0r.hostsman\n',
             'line_no': 2,
@@ -407,13 +407,13 @@ class HostsManTest(TestCase):
             'line_no': 3,
             'type': 'HOSTADDR',
             'addr': '127.0.1.1',
-            'names': ['a.example.tld'],
+            'names': ('a.example.tld', ),
         }, {
             'line': '127.0.1.2\tc.example.tld\n',
             'line_no': 5,
             'type': 'HOSTADDR',
             'addr': '127.0.1.2',
-            'names': ['c.example.tld'],
+            'names': ('c.example.tld', ),
         }), hostsman.parsed)
 
 
