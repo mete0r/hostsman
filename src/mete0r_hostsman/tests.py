@@ -114,6 +114,9 @@ class HostsManTest(TestCase):
         parsed = list(parsed)
         self.assertEquals({
             'localhost': '127.0.0.1'
+        }, dict(get_hosts(parsed, 'localhost')))
+        self.assertEquals({
+            'localhost': '127.0.0.1'
         }, dict(get_hosts(parsed, ['localhost'])))
         self.assertEquals({
             'localhost': '127.0.0.1',
@@ -161,6 +164,25 @@ class HostsManTest(TestCase):
             'addr': '127.0.0.1',
             'names': ['localhost'],
         }, {
+            'line': '# managed by mete0r.hostsman\n',
+            'line_no': 2,
+            'type': 'COMMENT',
+        }, {
+            'line': '127.0.1.1\ta.example.tld example.tld\n',
+            'line_no': 3,
+            'type': 'HOSTADDR',
+            'addr': '127.0.1.1',
+            'names': ['a.example.tld'],
+        }, {
+            'line': '127.0.1.2\tc.example.tld\n',
+            'line_no': 5,
+            'type': 'HOSTADDR',
+            'addr': '127.0.1.2',
+            'names': ['c.example.tld'],
+        }], parsed)
+        parsed = delete_hosts(parsed, 'localhost')
+        parsed = list(parsed)
+        self.assertEquals([{
             'line': '# managed by mete0r.hostsman\n',
             'line_no': 2,
             'type': 'COMMENT',

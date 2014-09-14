@@ -34,6 +34,8 @@ def list_hosts(parsed_lines):
 
 
 def get_hosts(parsed_lines, hosts):
+    if isinstance(hosts, basestring):
+        hosts = (hosts, )
     for hostname, hostaddr in list_hosts(parsed_lines):
         if hostname in hosts:
             yield hostname, hostaddr
@@ -80,6 +82,8 @@ def line_put_host(line, hostname, hostaddr):
 
 
 def delete_hosts(parsed_lines, hosts):
+    if isinstance(hosts, basestring):
+        hosts = (hosts, )
     for line in parsed_lines:
         if line['type'] == 'HOSTADDR':
             for hostname in hosts:
@@ -144,8 +148,6 @@ class HostsManager:
     __iter__ = list
 
     def get(self, hostnames=()):
-        if isinstance(hostnames, basestring):
-            hostnames = (hostnames, )
         return get_hosts(self.parsed, hostnames)
 
     def __getitem__(self, key):
@@ -161,8 +163,6 @@ class HostsManager:
         self.put({hostname: hostaddr})
 
     def delete(self, hostnames):
-        if isinstance(hostnames, basestring):
-            hostnames = (hostnames, )
         self.parsed = tuple(delete_hosts(self.parsed, hostnames))
 
     __delitem__ = delete
