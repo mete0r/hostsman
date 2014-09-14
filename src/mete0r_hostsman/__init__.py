@@ -57,22 +57,25 @@ def predicate_hostaddr(addrs):
 
 def put_hosts(parsed_lines, hosts):
 
-    not_seen = set(hosts.keys())
+    new_hostnames = set(hosts)
 
     for line in parsed_lines:
         if line['type'] == 'HOSTADDR':
             for hostname, hostaddr in hosts.items():
-                if hostname in not_seen:
-                    hostname_seen = line_put_host(line, hostname, hostaddr)
-                    if hostname_seen:
-                        not_seen.remove(hostname)
+                if hostaddr == line['addr']:
+                    line = line_append_hostname_if_missing(line, hostname)
+                    new_hostnames.remove(hostname)
+                else:
+                    line = line_delete_hostname(line, hostname)
             if len(line['names']) == 0:
                 # skip address without any names
                 continue
         yield line
 
+    # add new hosts: grouped by address
+
     new_addrs = {}
-    for hostname in not_seen:
+    for hostname in new_hostnames:
         hostaddr = hosts[hostname]
         new_addrs.setdefault(hostaddr, []).append(hostname)
     for hostaddr in sorted(new_addrs):
@@ -84,34 +87,39 @@ def put_hosts(parsed_lines, hosts):
         }
 
 
-def line_put_host(line, hostname, hostaddr):
-    if hostaddr == line['addr']:
-        if hostname not in line['names']:
-            line['names'] += (hostname, )
-        return True
-    else:
-        if hostname in line['names']:
-            line['names'] = delete_hostname(line['names'], hostname)
-        return False
-
-
 def delete_hosts(parsed_lines, hosts):
     if isinstance(hosts, basestring):
         hosts = (hosts, )
     for line in parsed_lines:
         if line['type'] == 'HOSTADDR':
             for hostname in hosts:
-                if hostname in line['names']:
-                    line['names'] = delete_hostname(line['names'], hostname)
+                line = line_delete_hostname(line, hostname)
             if len(line['names']) == 0:
                 # skip address without any names
                 continue
         yield line
 
 
-def delete_hostname(hostnames, hostname):
-    return tuple(name for name in hostnames
-                 if name.upper() != hostname.upper())
+def line_contains_hostname(line, hostname):
+    names = set(name.upper() for name in line['names'])
+    return hostname.upper() in names
+
+
+def line_append_hostname_if_missing(line, hostname):
+    if not line_contains_hostname(line, hostname):
+        return line_append_hostname(line, hostname)
+    return line
+
+
+def line_append_hostname(line, hostname):
+    return dict(line, names=line['names'] + (hostname, ))
+
+
+def line_delete_hostname(line, hostname):
+    hostnames = line['names']
+    hostnames = tuple(name for name in hostnames
+                      if name.upper() != hostname.upper())
+    return dict(line, names=hostnames)
 
 
 def parse(lines):
