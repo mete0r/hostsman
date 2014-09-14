@@ -36,9 +36,23 @@ def list_hosts(parsed_lines):
 def get_hosts(parsed_lines, hosts):
     if isinstance(hosts, basestring):
         hosts = (hosts, )
+    return get_hosts_by_predicate(parsed_lines, predicate_hostname(hosts))
+
+
+def get_hosts_by_predicate(parsed_lines, predicate):
     for hostname, hostaddr in list_hosts(parsed_lines):
-        if hostname in hosts:
+        if predicate(hostname, hostaddr):
             yield hostname, hostaddr
+
+
+def predicate_hostname(hosts):
+    hosts = set(hostname.upper() for hostname in hosts)
+    return lambda hostname, hostaddr: hostname.upper() in hosts
+
+
+def predicate_hostaddr(addrs):
+    addrs = set(addr.strip() for addr in addrs)
+    return lambda hostname, hostaddr: hostaddr.strip() in addrs
 
 
 def put_hosts(parsed_lines, hosts):
@@ -149,6 +163,9 @@ class HostsManager:
 
     def get(self, hostnames=()):
         return get_hosts(self.parsed, hostnames)
+
+    def get_by_predicate(self, predicate):
+        return get_hosts_by_predicate(self.parsed, predicate)
 
     def __getitem__(self, key):
         for hostname, hostaddr in self.get(key):

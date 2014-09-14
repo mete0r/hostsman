@@ -24,6 +24,7 @@ from mete0r_hostsman import parse
 from mete0r_hostsman import render
 from mete0r_hostsman import list_hosts
 from mete0r_hostsman import get_hosts
+from mete0r_hostsman import get_hosts_by_predicate
 from mete0r_hostsman import put_hosts
 from mete0r_hostsman import delete_hosts
 from mete0r_hostsman import HostsManager
@@ -122,6 +123,23 @@ class HostsManTest(TestCase):
             'localhost': '127.0.0.1',
             'example.tld': '127.0.1.1',
         }, dict(get_hosts(parsed, ['localhost', 'example.tld', 'non-exists'])))
+
+    def test_get_hosts_by_predicate(self):
+        parsed = parse([
+            '127.0.0.1\tlocalhost\n',
+            '# managed by mete0r.hostsman\n',
+            '127.0.1.1\ta.example.tld example.tld\n',
+            '127.0.1.2\tb.example.tld\n',
+            '127.0.1.2\tc.example.tld\n',
+        ])
+        parsed = list(parsed)
+        self.assertEquals({
+            'a.example.tld': '127.0.1.1',
+            'example.tld': '127.0.1.1',
+            'b.example.tld': '127.0.1.2',
+            'c.example.tld': '127.0.1.2',
+        }, dict(get_hosts_by_predicate(parsed, lambda hostname, hostaddr:
+                                       hostname != 'localhost')))
 
     def test_put_hosts(self):
         parsed = parse([
@@ -273,6 +291,22 @@ class HostsManTest(TestCase):
         }, dict(hostsman.get(['localhost', 'example.tld', 'non-exists'])))
         self.assertEquals('127.0.0.1', hostsman['localhost'])
         self.assertRaises(KeyError, hostsman.__getitem__, 'non-exists')
+
+    def test_hostmanager_get_by_predicate(self):
+        hostsman = HostsManager([
+            '127.0.0.1\tlocalhost\n',
+            '# managed by mete0r.hostsman\n',
+            '127.0.1.1\ta.example.tld example.tld\n',
+            '127.0.1.2\tb.example.tld\n',
+            '127.0.1.2\tc.example.tld\n',
+        ])
+        self.assertEquals({
+            'a.example.tld': '127.0.1.1',
+            'example.tld': '127.0.1.1',
+            'b.example.tld': '127.0.1.2',
+            'c.example.tld': '127.0.1.2',
+        }, dict(hostsman.get_by_predicate(lambda hostname, hostaddr:
+                                          hostname != 'localhost')))
 
     def test_hostmanager_put(self):
         hostsman = HostsManager([
