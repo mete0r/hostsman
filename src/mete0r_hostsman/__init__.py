@@ -16,6 +16,8 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+from __future__ import with_statement
+from contextlib import contextmanager
 import re
 
 
@@ -24,13 +26,11 @@ NAME_SEP = re.compile('[ \t\r\n]')
 
 
 def get_hosts(parsed_lines):
-    hosts = {}
     for line in parsed_lines:
         if line['type'] == 'HOSTADDR':
             hostaddr = line['addr']
             for hostname in line['names']:
-                hosts[hostname] = hostaddr
-    return hosts
+                yield hostname, hostaddr
 
 
 def put_hosts(parsed_lines, hosts):
@@ -125,3 +125,64 @@ def render(parsed_lines):
 
 def render_hostaddr_line(line):
     return '%s\t%s\n' % (line['addr'], ' '.join(line['names']))
+
+
+class HostsManager:
+
+    def __init__(self, lines=()):
+        self.parsed = tuple(parse(lines))
+
+    def list(self):
+        return get_hosts(self.parsed)
+
+    __iter__ = list
+
+    def get(self, hostnames=()):
+        if isinstance(hostnames, basestring):
+            hostnames = (hostnames, )
+        for hostname, hostaddr in get_hosts(self.parsed):
+            if hostname in hostnames:
+                yield hostname, hostaddr
+
+    def __getitem__(self, key):
+        for hostname, hostaddr in self.get(key):
+            if hostname == key:
+                return hostaddr
+        raise KeyError(key)
+
+    def put(self, hosts):
+        self.parsed = tuple(put_hosts(self.parsed, hosts))
+
+    def __setitem__(self, hostname, hostaddr):
+        self.put({hostname: hostaddr})
+
+    def delete(self, hostnames):
+        if isinstance(hostnames, basestring):
+            hostnames = (hostnames, )
+        self.parsed = tuple(delete_hosts(self.parsed, hostnames))
+
+    __delitem__ = delete
+
+    def render(self):
+        return render(self.parsed)
+
+
+def load(f):
+    return HostsManager(f)
+
+
+def dump(hostsman, f):
+    for line in hostsman.render():
+        f.write(line)
+
+
+@contextmanager
+def edit(path='/etc/hosts'):
+    with open(path, 'r+') as f:
+        hostsman = load(f)
+
+        yield hostsman
+
+        f.seek(0)
+        dump(hostsman, f)
+        f.truncate()

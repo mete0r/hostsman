@@ -72,7 +72,7 @@ def main():
 def print_hosts(path, hostnames):
     with file(path, 'rb') as f:
         parsed = parse(f)
-        hosts = get_hosts(parsed)
+        hosts = dict(get_hosts(parsed))
         for hostname in sorted(hostnames or hosts):
             hostaddr = hosts.get(hostname)
             sys.stdout.write('%s\t%s\n' % (hostname, hostaddr))

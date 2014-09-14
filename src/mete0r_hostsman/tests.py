@@ -25,6 +25,7 @@ from mete0r_hostsman import render
 from mete0r_hostsman import get_hosts
 from mete0r_hostsman import put_hosts
 from mete0r_hostsman import delete_hosts
+from mete0r_hostsman import HostsManager
 
 
 class HostsManTest(TestCase):
@@ -92,7 +93,7 @@ class HostsManTest(TestCase):
             '127.0.1.2\tb.example.tld\n',
             '127.0.1.2\tc.example.tld\n',
         ])
-        hosts = get_hosts(parsed)
+        hosts = dict(get_hosts(parsed))
         self.assertEquals({
             'localhost': '127.0.0.1',
             'example.tld': '127.0.1.1',
@@ -158,6 +159,188 @@ class HostsManTest(TestCase):
             'addr': '127.0.1.2',
             'names': ['c.example.tld'],
         }], parsed)
+
+    def test_hostmanager_init(self):
+        hostsman = HostsManager([
+            '127.0.0.1\tlocalhost\n',
+            '# managed by mete0r.hostsman\n',
+            '127.0.1.1\ta.example.tld example.tld\n',
+            '127.0.1.2\tb.example.tld\n',
+            '127.0.1.2\tc.example.tld\n',
+        ])
+        self.assertEquals(({
+            'line': '127.0.0.1\tlocalhost\n',
+            'line_no': 1,
+            'type': 'HOSTADDR',
+            'addr': '127.0.0.1',
+            'names': ['localhost'],
+        }, {
+            'line': '# managed by mete0r.hostsman\n',
+            'line_no': 2,
+            'type': 'COMMENT',
+        }, {
+            'line': '127.0.1.1\ta.example.tld example.tld\n',
+            'line_no': 3,
+            'type': 'HOSTADDR',
+            'addr': '127.0.1.1',
+            'names': ['a.example.tld', 'example.tld'],
+        }, {
+            'line': '127.0.1.2\tb.example.tld\n',
+            'line_no': 4,
+            'type': 'HOSTADDR',
+            'addr': '127.0.1.2',
+            'names': ['b.example.tld'],
+        }, {
+            'line': '127.0.1.2\tc.example.tld\n',
+            'line_no': 5,
+            'type': 'HOSTADDR',
+            'addr': '127.0.1.2',
+            'names': ['c.example.tld'],
+        }), hostsman.parsed)
+
+    def test_hostmanager_list(self):
+        hostsman = HostsManager([
+            '127.0.0.1\tlocalhost\n',
+            '# managed by mete0r.hostsman\n',
+            '127.0.1.1\ta.example.tld example.tld\n',
+            '127.0.1.2\tb.example.tld\n',
+            '127.0.1.2\tc.example.tld\n',
+        ])
+        expected = {
+            'localhost': '127.0.0.1',
+            'example.tld': '127.0.1.1',
+            'a.example.tld': '127.0.1.1',
+            'b.example.tld': '127.0.1.2',
+            'c.example.tld': '127.0.1.2',
+        }
+        self.assertEquals(expected, dict(hostsman.list()))
+        self.assertEquals(expected, dict(hostsman))
+
+    def test_hostmanager_get(self):
+        hostsman = HostsManager([
+            '127.0.0.1\tlocalhost\n',
+            '# managed by mete0r.hostsman\n',
+            '127.0.1.1\ta.example.tld example.tld\n',
+            '127.0.1.2\tb.example.tld\n',
+            '127.0.1.2\tc.example.tld\n',
+        ])
+        self.assertEquals({
+            'localhost': '127.0.0.1'
+        }, dict(hostsman.get('localhost')))
+        self.assertEquals({
+            'localhost': '127.0.0.1',
+            'example.tld': '127.0.1.1',
+        }, dict(hostsman.get(['localhost', 'example.tld', 'non-exists'])))
+        self.assertEquals('127.0.0.1', hostsman['localhost'])
+        self.assertRaises(KeyError, hostsman.__getitem__, 'non-exists')
+
+    def test_hostmanager_put(self):
+        hostsman = HostsManager([
+            '127.0.0.1\tlocalhost\n'
+        ])
+        hostsman.put({
+            'dev.example.tld': '127.0.0.1',
+            'example.tld': '127.0.1.1'
+        })
+        self.assertEquals(({
+            'line': '127.0.0.1\tlocalhost\n',
+            'line_no': 1,
+            'type': 'HOSTADDR',
+            'addr': '127.0.0.1',
+            'names': ['localhost', 'dev.example.tld'],
+        }, {
+            'type': 'HOSTADDR',
+            'addr': '127.0.1.1',
+            'names': ['example.tld'],
+        }), hostsman.parsed)
+
+    def test_hostmanager_setitem(self):
+        hostsman = HostsManager([
+            '127.0.0.1\tlocalhost\n'
+        ])
+        hostsman['dev.example.tld'] = '127.0.0.1'
+        hostsman['example.tld'] = '127.0.1.1'
+        self.assertEquals(({
+            'line': '127.0.0.1\tlocalhost\n',
+            'line_no': 1,
+            'type': 'HOSTADDR',
+            'addr': '127.0.0.1',
+            'names': ['localhost', 'dev.example.tld'],
+        }, {
+            'type': 'HOSTADDR',
+            'addr': '127.0.1.1',
+            'names': ['example.tld'],
+        }), hostsman.parsed)
+
+    def test_hostmanager_delete(self):
+        hostsman = HostsManager([
+            '127.0.0.1\tlocalhost\n',
+            '# managed by mete0r.hostsman\n',
+            '127.0.1.1\ta.example.tld example.tld\n',
+            '127.0.1.2\tb.example.tld\n',
+            '127.0.1.2\tc.example.tld\n',
+        ])
+        hostsman.delete([
+            'example.tld',
+            'b.example.tld'
+        ])
+        self.assertEquals(({
+            'line': '127.0.0.1\tlocalhost\n',
+            'line_no': 1,
+            'type': 'HOSTADDR',
+            'addr': '127.0.0.1',
+            'names': ['localhost'],
+        }, {
+            'line': '# managed by mete0r.hostsman\n',
+            'line_no': 2,
+            'type': 'COMMENT',
+        }, {
+            'line': '127.0.1.1\ta.example.tld example.tld\n',
+            'line_no': 3,
+            'type': 'HOSTADDR',
+            'addr': '127.0.1.1',
+            'names': ['a.example.tld'],
+        }, {
+            'line': '127.0.1.2\tc.example.tld\n',
+            'line_no': 5,
+            'type': 'HOSTADDR',
+            'addr': '127.0.1.2',
+            'names': ['c.example.tld'],
+        }), hostsman.parsed)
+
+    def test_hostmanager_delitem(self):
+        hostsman = HostsManager([
+            '127.0.0.1\tlocalhost\n',
+            '# managed by mete0r.hostsman\n',
+            '127.0.1.1\ta.example.tld example.tld\n',
+            '127.0.1.2\tb.example.tld\n',
+            '127.0.1.2\tc.example.tld\n',
+        ])
+        del hostsman['example.tld']
+        del hostsman['b.example.tld']
+        self.assertEquals(({
+            'line': '127.0.0.1\tlocalhost\n',
+            'line_no': 1,
+            'type': 'HOSTADDR',
+            'addr': '127.0.0.1',
+            'names': ['localhost'],
+        }, {
+            'line': '# managed by mete0r.hostsman\n',
+            'line_no': 2,
+            'type': 'COMMENT',
+        }, {
+            'line': '127.0.1.1\ta.example.tld example.tld\n',
+            'line_no': 3,
+            'type': 'HOSTADDR',
+            'addr': '127.0.1.1',
+            'names': ['a.example.tld'],
+        }, {
+            'line': '127.0.1.2\tc.example.tld\n',
+            'line_no': 5,
+            'type': 'HOSTADDR',
+            'addr': '127.0.1.2',
+            'names': ['c.example.tld'],
+        }), hostsman.parsed)
 
 
 def test_suite():
