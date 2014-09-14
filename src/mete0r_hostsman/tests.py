@@ -22,6 +22,7 @@ from unittest import makeSuite
 
 from mete0r_hostsman import parse
 from mete0r_hostsman import render
+from mete0r_hostsman import list_hosts
 from mete0r_hostsman import get_hosts
 from mete0r_hostsman import put_hosts
 from mete0r_hostsman import delete_hosts
@@ -85,6 +86,23 @@ class HostsManTest(TestCase):
             '127.0.1.1\texample.tld\n',
             ''.join(rendered))
 
+    def test_list_hosts(self):
+        parsed = parse([
+            '127.0.0.1\tlocalhost\n',
+            '# managed by mete0r.hostsman\n',
+            '127.0.1.1\ta.example.tld example.tld\n',
+            '127.0.1.2\tb.example.tld\n',
+            '127.0.1.2\tc.example.tld\n',
+        ])
+        hosts = dict(list_hosts(parsed))
+        self.assertEquals({
+            'localhost': '127.0.0.1',
+            'example.tld': '127.0.1.1',
+            'a.example.tld': '127.0.1.1',
+            'b.example.tld': '127.0.1.2',
+            'c.example.tld': '127.0.1.2',
+        }, hosts)
+
     def test_get_hosts(self):
         parsed = parse([
             '127.0.0.1\tlocalhost\n',
@@ -93,14 +111,14 @@ class HostsManTest(TestCase):
             '127.0.1.2\tb.example.tld\n',
             '127.0.1.2\tc.example.tld\n',
         ])
-        hosts = dict(get_hosts(parsed))
+        parsed = list(parsed)
+        self.assertEquals({
+            'localhost': '127.0.0.1'
+        }, dict(get_hosts(parsed, ['localhost'])))
         self.assertEquals({
             'localhost': '127.0.0.1',
             'example.tld': '127.0.1.1',
-            'a.example.tld': '127.0.1.1',
-            'b.example.tld': '127.0.1.2',
-            'c.example.tld': '127.0.1.2',
-        }, hosts)
+        }, dict(get_hosts(parsed, ['localhost', 'example.tld', 'non-exists'])))
 
     def test_put_hosts(self):
         parsed = parse([

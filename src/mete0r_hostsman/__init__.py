@@ -25,12 +25,18 @@ ADDR_SEP = re.compile('[ \t]+')
 NAME_SEP = re.compile('[ \t\r\n]')
 
 
-def get_hosts(parsed_lines):
+def list_hosts(parsed_lines):
     for line in parsed_lines:
         if line['type'] == 'HOSTADDR':
             hostaddr = line['addr']
             for hostname in line['names']:
                 yield hostname, hostaddr
+
+
+def get_hosts(parsed_lines, hosts):
+    for hostname, hostaddr in list_hosts(parsed_lines):
+        if hostname in hosts:
+            yield hostname, hostaddr
 
 
 def put_hosts(parsed_lines, hosts):
@@ -133,16 +139,14 @@ class HostsManager:
         self.parsed = tuple(parse(lines))
 
     def list(self):
-        return get_hosts(self.parsed)
+        return list_hosts(self.parsed)
 
     __iter__ = list
 
     def get(self, hostnames=()):
         if isinstance(hostnames, basestring):
             hostnames = (hostnames, )
-        for hostname, hostaddr in get_hosts(self.parsed):
-            if hostname in hostnames:
-                yield hostname, hostaddr
+        return get_hosts(self.parsed, hostnames)
 
     def __getitem__(self, key):
         for hostname, hostaddr in self.get(key):

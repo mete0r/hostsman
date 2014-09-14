@@ -41,7 +41,7 @@ from docopt import docopt
 
 from mete0r_hostsman import parse
 from mete0r_hostsman import render
-from mete0r_hostsman import get_hosts
+from mete0r_hostsman import list_hosts
 from mete0r_hostsman import put_hosts
 from mete0r_hostsman import delete_hosts
 
@@ -72,7 +72,7 @@ def main():
 def print_hosts(path, hostnames):
     with file(path, 'rb') as f:
         parsed = parse(f)
-        hosts = dict(get_hosts(parsed))
+        hosts = dict(list_hosts(parsed))
         for hostname in sorted(hostnames or hosts):
             hostaddr = hosts.get(hostname)
             sys.stdout.write('%s\t%s\n' % (hostname, hostaddr))
