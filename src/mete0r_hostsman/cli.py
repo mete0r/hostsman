@@ -20,15 +20,16 @@
 
 Usage::
 
-    hostsman [--file=<file>] get [<name>...]
-    hostsman [--file=<file>] put [<name-address>...]
-    hostsman [--file=<file>] delete [<name>...]
+    hostsman [-f <file>] list
+    hostsman [-f <file>] get <name>...
+    hostsman [-f <file>] put <name-address>...
+    hostsman [-f <file>] delete <name>...
     hostsman --help
 
 Options::
 
     -h --help               Show this screen
-       --file=<file>        hosts file. (default: /etc/hosts)
+    -f --file=<file>        hosts file. (default: /etc/hosts)
 
 
     <name-address>          <name>=<address> (e.g. example.tld=127.0.0.1)
@@ -39,11 +40,8 @@ import sys
 
 from docopt import docopt
 
-from mete0r_hostsman import parse
-from mete0r_hostsman import render
-from mete0r_hostsman import list_hosts
-from mete0r_hostsman import put_hosts
-from mete0r_hostsman import delete_hosts
+from mete0r_hostsman import load
+from mete0r_hostsman import edit
 
 
 logger = logging.getLogger(__name__)
@@ -55,38 +53,34 @@ def main():
 
     path = args['--file'] or '/etc/hosts'
 
-    if args['get']:
-        print_hosts(path, args['<name>'])
+    if args['list']:
+        with open(path) as f:
+            hostsman = load(f)
+        hosts = hostsman.list()
+        print_hosts(hosts)
+    elif args['get']:
+        with open(path) as f:
+            hostsman = load(f)
+        hosts = hostsman.get(args['<name>'])
+        print_hosts(hosts)
     elif args['put']:
         kvlist = args['<name-address>']
-        update = lambda parsed: put_hosts(parsed, parse_name_addr(kvlist))
-        update_file(path, update)
+        hosts = parse_name_addr(kvlist)
+        with edit(path) as hostsman:
+            hostsman.put(hosts)
     elif args['delete']:
-        update = lambda parsed: delete_hosts(parsed, args['<name>'])
-        update_file(path, update)
+        with edit(path) as hostsman:
+            hostsman.delete(args['<name>'])
     else:
         logger.error('invalid invocation. try %s --help' % sys.argv[0])
         raise SystemExit(1)
 
 
-def print_hosts(path, hostnames):
-    with file(path, 'rb') as f:
-        parsed = parse(f)
-        hosts = dict(list_hosts(parsed))
-        for hostname in sorted(hostnames or hosts):
-            hostaddr = hosts.get(hostname)
-            sys.stdout.write('%s\t%s\n' % (hostname, hostaddr))
-
-
-def update_file(path, update):
-    with file(path, 'rb') as f:
-        parsed = parse(f)
-        updated = update(parsed)
-        rendered = render(updated)
-        with file(path, 'rb+') as g:
-            for line in rendered:
-                g.write(line)
-            g.truncate()
+def print_hosts(hosts):
+    hosts = dict(hosts)
+    for hostname in sorted(hosts):
+        hostaddr = hosts[hostname]
+        sys.stdout.write('%s\t%s\n' % (hostname, hostaddr))
 
 
 def rest_to_docopt(doc):
