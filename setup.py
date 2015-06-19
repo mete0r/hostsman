@@ -17,28 +17,86 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 from __future__ import with_statement
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
-
+from contextlib import contextmanager
 import os.path
+import sys
 
 
-SETUP_DIR = os.path.dirname(__file__)
+def setup_dir(f):
+    ''' Decorate f to run inside the directory where setup.py resides.
+    '''
+    setup_dir = os.path.dirname(os.path.abspath(__file__))
+
+    def wrapped(*args, **kwargs):
+        with chdir(setup_dir):
+            return f(*args, **kwargs)
+
+    return wrapped
 
 
-def read_file(path):
-    path = os.path.join(SETUP_DIR, path)
-    with file(path) as f:
+@contextmanager
+def chdir(new_dir):
+    old_dir = os.path.abspath(os.curdir)
+    os.chdir(new_dir)
+    try:
+        yield
+    finally:
+        os.chdir(old_dir)
+
+
+@setup_dir
+def import_setuptools():
+    try:
+        import setuptools
+        return setuptools
+    except ImportError:
+        pass
+
+    import ez_setup
+    ez_setup.use_setuptools()
+    import setuptools
+    return setuptools
+
+
+@setup_dir
+def readfile(path):
+    if sys.version_info.major == 3:
+        f = open(path, encoding='utf-8')
+    else:
+        f = open(path)
+    with f:
         return f.read()
+
+
+@setup_dir
+def get_version():
+    from mete0r_hostsman import __version__
+    return __version__
+
+
+def alltests():
+    import sys
+    import unittest
+    import zope.testrunner.find
+    import zope.testrunner.options
+    here = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+    args = sys.argv[:]
+    defaults = ['--test-path', here]
+    options = zope.testrunner.options.get_options(args, defaults)
+    suites = list(zope.testrunner.find.find_suites(options))
+    return unittest.TestSuite(suites)
+
+
+tests_require = [
+    'zope.testrunner',
+]
 
 
 setup_info = {
     'name': 'mete0r.hostsman',
-    'version': read_file('VERSION.txt').strip(),
-    'description': 'Manage /etc/hosts',
-    'long_description': read_file('README.rst'),
+    'version': get_version(),
+    'description': 'Manage /etc/hosts file.',
+    'long_description': readfile('README.rst'),
 
     'author': 'mete0r',
     'author_email': 'mete0r@sarangbang.or.kr',
@@ -48,13 +106,40 @@ setup_info = {
     'packages': [
         'mete0r_hostsman'
     ],
-    'package_dir': {'': 'src'},
+    'package_dir': {'': '.'},
     'install_requires': [
         'docopt'
     ],
+    'test_suite': '__main__.alltests',
+    'tests_require': tests_require,
+    'extras_require': {
+        'test': tests_require,
+    },
     'entry_points': {
-        'console_scripts': ['hostsman = mete0r_hostsman.cli:main']
-    }
+        'console_scripts': [
+            'hostsman = mete0r_hostsman.cli:main'
+        ]
+    },
+    'classifiers': [
+        'Development Status :: 4 - Beta',
+        # 'Intended Audience :: Developers',
+        'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',  # noqa
+        # 'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.7',
+        # 'Programming Language :: Python :: 3.4',
+        # 'Programming Language :: Python :: Implementation :: CPython',
+    ],
+    'keywords': ['hosts'],
+    'zip_safe': True,
 }
 
-setup(**setup_info)
+
+@setup_dir
+def main():
+    setuptools = import_setuptools()
+    setuptools.setup(**setup_info)
+
+
+if __name__ == '__main__':
+    main()

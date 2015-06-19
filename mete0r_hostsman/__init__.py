@@ -21,6 +21,9 @@ from contextlib import contextmanager
 import re
 
 
+__version__ = '0.0.0'
+
+
 ADDR_SEP = re.compile('[ \t]+')
 NAME_SEP = re.compile('[ \t\r\n]')
 
