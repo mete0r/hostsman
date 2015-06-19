@@ -162,6 +162,29 @@ class HostsManTest(TestCase):
             'names': ('example.tld', ),
         }], parsed)
 
+    def test_put_hosts_handles_multiple_matching_address_lines(self):
+        parsed = parse([
+            '127.0.2.1\tfoo.example.tld\n',
+            '127.0.2.1\tbar.example.tld\n',
+        ])
+        parsed = put_hosts(parsed, {
+            'baz.example.tld': '127.0.2.1'
+        })
+        parsed = list(parsed)
+        self.assertEquals([{
+            'line': '127.0.2.1\tfoo.example.tld\n',
+            'line_no': 1,
+            'type': 'HOSTADDR',
+            'addr': '127.0.2.1',
+            'names': ('foo.example.tld', 'baz.example.tld'),
+        }, {
+            'line': '127.0.2.1\tbar.example.tld\n',
+            'line_no': 2,
+            'type': 'HOSTADDR',
+            'addr': '127.0.2.1',
+            'names': ('bar.example.tld',),
+        }], parsed)
+
     def test_delete_hosts(self):
         parsed = parse([
             '127.0.0.1\tlocalhost\n',

@@ -62,7 +62,7 @@ def put_hosts(parsed_lines, hosts):
     for line in parsed_lines:
         if line['type'] == 'HOSTADDR':
             for hostname, hostaddr in hosts.items():
-                if hostaddr == line['addr']:
+                if hostaddr == line['addr'] and hostname in new_hostnames:
                     line = line_append_hostname_if_missing(line, hostname)
                     new_hostnames.remove(hostname)
                 else:
